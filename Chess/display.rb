@@ -13,9 +13,11 @@ class Display
     @board.grid.each_with_index do |row, x|
       row.each_with_index do |piece, y|
         if @cursor.cursor_pos == [x, y]
-          print "#{piece.symbol} ".colorize(:background => :red)
+          print "#{piece.symbol} ".colorize(color: :light_blue, background: :red)
+        elsif x.even? && y.even? || x.odd? && y.odd?
+          print "#{piece.symbol} ".colorize(color: :light_blue, background: :white)
         else
-          print "#{piece.symbol} "
+          print "#{piece.symbol} ".colorize(color: :light_blue)
         end
       end
       puts

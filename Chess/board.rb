@@ -5,27 +5,21 @@ class Board
   attr_reader :grid
 
   def initialize
-    @grid = Array.new(8) { Array.new(8) }
+    @grid = Array.new(8) { Array.new(8, NullPiece.instance) }
 
     Piece.all_pieces(self).each do |piece|
       self[piece.current_pos] = piece
-    end
-
-    null_piece = NullPiece.instance
-
-    @grid.flatten.map do |piece|
-      null_piece if piece.nil?
     end
   end
 
   def move_piece(start_pos, end_pos)
     if self[start_pos].nil?
       raise "No piece at this position."
-    elsif !self[end_pos].nil?
+    elsif self[end_pos] != NullPiece.instance
       raise "Position occupied."
     else
       self[end_pos] = self[start_pos]
-      self[start_pos] = nil
+      self[start_pos] = NullPiece.instance
     end
   end
 
