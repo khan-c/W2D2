@@ -52,6 +52,8 @@ module Slideable
 
   def move(relative_move)
     moves = []
+    # require 'byebug'
+    # debugger
     row, col = @current_pos[0] + relative_move[0], @current_pos[1] + relative_move[1]
     temp_pos = [row, col]
     until !@board.in_bounds?(temp_pos)

@@ -8,6 +8,7 @@ class Board
     @grid = Array.new(8) { Array.new(8, NullPiece.instance) }
 
     pieces.each do |piece|
+      piece.update_board(self)
       self[piece.current_pos] = piece
     end
   end
@@ -21,7 +22,8 @@ class Board
         raise "Position occupied."
       else
         self[end_pos] = piece
-        self[end_pos].update_position(end_pos)
+        self[end_pos].current_pos = end_pos
+        self[end_pos].update_board(self)
         self[start_pos] = NullPiece.instance
       end
     else
@@ -53,10 +55,11 @@ class Board
       opposing_pieces(Piece.opposite_side(side)).each do |piece|
         valid_moves += piece.valid_moves
       end
-      valid_moves.empty?
-    end
 
-    false
+      valid_moves.empty?
+    else
+      false
+    end
   end
 
   def in_check?(side)
