@@ -1,7 +1,28 @@
 require 'singleton'
 
 module Stepable
-  def moves; end
+  def moves
+    moves = []
+
+    move_diffs.each do |diff|
+      moves << move(diff)
+    end
+
+    moves.compact
+  end
+
+  def move(diff)
+    row, col = @current_pos[0] + diff[0], @current_pos[1] + diff[1]
+    temp_pos = [row, col]
+    if !@board.in_bounds?(temp_pos)
+      nil
+    elsif @board[temp_pos].symbol == NullPiece.instance.symbol
+      temp_pos
+    elsif @board[temp_pos].side == Piece.opposite_side(self.side)
+      temp_pos
+    end
+  end
+
 end
 
 module Slideable
@@ -33,10 +54,16 @@ module Slideable
     moves = []
     row, col = @current_pos[0] + relative_move[0], @current_pos[1] + relative_move[1]
     temp_pos = [row, col]
-    until @board[temp_pos] != NullPiece
-      temp_pos = [temp_pos[0] + relative_move[0], temp_pos[1] + relative_move[1]]
-      break if !@board.in_bounds?(temp_pos)
-      moves << temp_pos
+    until !@board.in_bounds?(temp_pos)
+      if @board[temp_pos].side == self.side
+        break
+      elsif @board[temp_pos].side == Piece.opposite_side(self.side)
+        moves << temp_pos
+        break
+      else
+        moves << temp_pos
+        temp_pos = [temp_pos[0] + relative_move[0], temp_pos[1] + relative_move[1]]
+      end
     end
     moves
   end
@@ -66,7 +93,8 @@ class Piece
     pieces
   end
 
-  attr_reader :symbol, :current_pos
+  attr_reader :symbol, :side
+  attr_accessor :current_pos
 
   def initialize(start_pos, board, symbol = " ", side = :white)
     @current_pos = start_pos
@@ -75,19 +103,92 @@ class Piece
     @side = side
   end
 
-  def moves
+  def self.opposite_side(side)
+    side == :white ? :black : :white
   end
+
+  def update_position(pos)
+    @current_pos = pos
+  end
+
+  def update_board(board)
+    @board = board
+  end
+
+  def valid_moves
+    moves.reject { |move| move_into_check?(move) }
+  end
+
+  def move_into_check?(end_pos)
+    duped_board = @board.dup_board
+    duped_board.move_piece(self.current_pos, end_pos)
+    duped_board.in_check?(self.side)
+  end
+
 end
 
 class King < Piece
+  include Stepable
 
+  def move_diffs
+    [
+      [-1, -1], [0, -1], [1, -1], [1, 0],
+      [1, 1], [0, 1], [-1, 1], [-1, 0]
+    ]
+  end
 end
 
 class Knight < Piece
+  include Stepable
 
+  def move_diffs
+    [
+      [2, 1], [2, -1], [-2, 1], [-2, -1],
+      [1, 2], [1, -2], [-1, 2], [-1, -2]
+    ]
+  end
 end
 
 class Pawn < Piece
+
+  def moves
+    row, col = @current_pos
+    moves = []
+    if @board[[row + forward_dir, col]].is_a?(NullPiece)
+      moves += [[row + forward_dir, col]]
+      if at_start_row? && @board[[row + 2*forward_dir, col]].is_a?(NullPiece)
+        moves += [[row + 2*forward_dir, col]]
+      end
+    end
+    moves += side_attacks
+    moves
+  end
+
+  def at_start_row?
+    if @side == :white
+      return @current_pos[0] == 6
+    else
+      return @current_pos[0] == 1
+    end
+  end
+
+  def forward_dir
+    if @side == :white
+      return -1
+    else
+      return 1
+    end
+  end
+
+  def side_attacks
+    row, col = @current_pos
+    [[row + forward_dir, col + 1], [row + forward_dir, col -1]].select do |pos|
+      if @board.in_bounds?(pos)
+        @board[pos].side == Piece.opposite_side(self.side)
+      end
+    end
+  end
+
 end
 
 class Bishop < Piece

@@ -7,6 +7,7 @@ class Display
   def initialize(board)
     @board = board
     @cursor = Cursor.new([0,0], board)
+    @start_pos = nil
   end
 
   def render
@@ -26,11 +27,24 @@ class Display
   end
 
   def play_loop
-    while true
+    until @board.checkmate?(:white) || @board.checkmate?(:black)
       system("clear")
       render
-      @cursor.get_input
+      move = @cursor.get_input
+      if move.is_a?(Array)
+        if @start_pos
+          @end_pos = move
+          @board.move_piece(@start_pos, @end_pos)
+          @start_pos = nil
+        else
+          @start_pos = move
+        end
+      end
     end
+  end
+
+  def take_turn
+
   end
 
 end
